@@ -48,14 +48,6 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 _sessions: dict[str, dict] = {}
 _sessions_lock = threading.Lock()
 
-# Auto-shutdown after 5 minutes of inactivity (safety for sandbox)
-def _auto_shutdown():
-    """Auto-shutdown the server after 5 minutes."""
-    time.sleep(300)
-    logger.info("Auto-shutdown triggered after 5 minutes.")
-    os._exit(0)
-
-threading.Thread(target=_auto_shutdown, daemon=True).start()
 
 
 # ── GitHub URL validation ──────────────────────────────────────────────────────

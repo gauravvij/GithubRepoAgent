@@ -665,7 +665,7 @@ function printBanner(modelName) {
   // Build the "Powered by" line dynamically from the active model in .env
   const displayModel = modelName || 'OpenRouter';
   // Pad the model line to fit the banner width (64 chars between ║ borders)
-  const innerWidth = 64;
+  const innerWidth = 62;
   const label = 'Powered by ' + displayModel + ' / OpenRouter';
   const padTotal = innerWidth - label.length;
   const padLeft = Math.floor(padTotal / 2);
