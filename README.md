@@ -8,9 +8,11 @@
 
 ---
 
-# Query Any Repo
+# Query Any Github Repo
 
 A terminal-styled AI agent that analyzes any GitHub repository and answers questions about its codebase. Point it at any public GitHub URL and get a comprehensive architectural breakdown — then ask follow-up questions in a conversational interface.
+
+![Demo](https://heyneo-content.s3.us-east-2.amazonaws.com/documents/public/query-any-git-repo-neo.gif)
 
 ## What It Does
 
