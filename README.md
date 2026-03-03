@@ -2,7 +2,7 @@
 
 [![Made by NEO](https://img.shields.io/badge/Made%20by-NEO-6C63FF?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=NeoResearchInc.heyneo)
 
-> **[NEO](https://marketplace.visualstudio.com/items?itemName=NeoResearchInc.heyneo)** — Your AI-powered developer companion. Get it on the VS Code Marketplace.
+> **[NEO](https://marketplace.visualstudio.com/items?itemName=NeoResearchInc.heyneo)** — Your autonomous AI Engineering Agent. Try NEO in your VS Code IDE for your AI/ML tasks.
 
 </div>
 
