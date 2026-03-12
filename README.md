@@ -29,7 +29,7 @@ A terminal-styled AI agent that analyzes any GitHub repository and answers quest
 
 ## Tech Stack
 
-- **LLM**: Configurable via `.env` (default: `google/gemini-2.5-flash-lite` via OpenRouter)
+- **LLM**: Multi-provider support — [OpenRouter](https://openrouter.ai/) (default), [MiniMax](https://www.minimaxi.com/), or any OpenAI-compatible endpoint
 - **Backend**: Python + Flask with Server-Sent Events (SSE) for streaming
 - **Analysis**: Parallel map-reduce chunking with token-aware hierarchical reduction
 - **Frontend**: Terminal-styled dark web UI
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env and add your OpenRouter API key
+# Edit .env and add your API key (see "Supported Providers" below)
 ```
 
 ### 4. Run the server
@@ -77,14 +77,54 @@ All configuration is done via `.env` (see `.env.example`):
 
 | Variable | Description | Default |
 |---|---|---|
-| `OPENROUTER_API_KEY` | Your OpenRouter API key | *(required)* |
-| `OPENROUTER_BASE_URL` | OpenRouter API base URL | `https://openrouter.ai/api/v1` |
-| `MODEL_NAME` | LLM model to use | `google/gemini-2.5-flash-lite-preview-06-17` |
+| `LLM_PROVIDER` | Provider preset: `openrouter`, `minimax`, or `custom` | `openrouter` |
+| `OPENROUTER_API_KEY` | OpenRouter API key (when using OpenRouter) | *(required for openrouter)* |
+| `MINIMAX_API_KEY` | MiniMax API key (when using MiniMax) | *(required for minimax)* |
+| `MODEL_NAME` | LLM model to use | Provider-dependent |
+| `LLM_BASE_URL` | Override base URL for any provider | Provider-dependent |
+| `LLM_API_KEY` | Override API key for any provider | Provider-dependent |
 | `FLASK_HOST` | Server bind host | `0.0.0.0` |
 | `FLASK_PORT` | Server port | `5000` |
 | `GITHUB_CLONE_BASE` | Temp dir for cloned repos | `/tmp/codebase_agent_repos` |
 
-You can swap in any OpenRouter-compatible model by changing `MODEL_NAME` in `.env` — the UI reflects the active model dynamically.
+### Supported Providers
+
+#### OpenRouter (default)
+
+```bash
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=your_key_here
+MODEL_NAME=google/gemini-2.5-flash-lite   # or any OpenRouter model
+```
+
+#### MiniMax
+
+[MiniMax](https://www.minimaxi.com/) offers high-performance models with a 204K token context window — ideal for analyzing large codebases in fewer chunks.
+
+```bash
+LLM_PROVIDER=minimax
+MINIMAX_API_KEY=your_key_here
+# MODEL_NAME=MiniMax-M2.5              # default — peak performance, best value
+# MODEL_NAME=MiniMax-M2.5-highspeed    # same performance, faster
+```
+
+| Model | Context Window | Input Price | Output Price |
+|---|---|---|---|
+| `MiniMax-M2.5` | 204,800 tokens | $0.3/M tokens | $1.2/M tokens |
+| `MiniMax-M2.5-highspeed` | 204,800 tokens | $0.6/M tokens | $2.4/M tokens |
+
+Get your API key at [platform.minimax.io](https://platform.minimax.io/).
+
+#### Custom Provider
+
+Any OpenAI-compatible endpoint can be used:
+
+```bash
+LLM_PROVIDER=custom
+LLM_API_KEY=your_key_here
+LLM_BASE_URL=https://your-endpoint/v1
+MODEL_NAME=your-model-name
+```
 
 ## Architecture
 
