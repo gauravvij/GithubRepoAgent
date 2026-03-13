@@ -400,9 +400,13 @@ def get_config():
     Return public runtime configuration for the frontend.
 
     Returns:
-        JSON with 'model' key reflecting the active MODEL_NAME from .env.
+        JSON with 'model' and 'provider' keys reflecting the active configuration.
     """
-    return jsonify({"model": os.getenv("MODEL_NAME", "google/gemini-2.5-flash-lite")})
+    from agent import LLM_PROVIDER, MODEL_NAME as ACTIVE_MODEL
+    return jsonify({
+        "model": ACTIVE_MODEL,
+        "provider": LLM_PROVIDER,
+    })
 
 
 @app.route("/health")

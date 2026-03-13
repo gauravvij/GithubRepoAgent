@@ -1,18 +1,20 @@
 """
 agent.py - AI-powered codebase analysis agent.
 
-Uses the OpenRouter API with Gemini 2.5 Flash Lite to analyze project codebases,
-generate comprehensive reports, and answer follow-up questions in a stateful
+Uses a configurable LLM provider to analyze project codebases, generate
+comprehensive reports, and answer follow-up questions in a stateful
 multi-turn conversation.
+
+Supported providers:
+  - **openrouter** (default): OpenRouter API with any compatible model
+  - **minimax**: MiniMax API (OpenAI-compatible) with MiniMax-M2.5 models
+  - **custom**: Any OpenAI-compatible endpoint via manual configuration
 
 Configuration is loaded from a .env file via python-dotenv.
 
 Context-limit enforcement
 -------------------------
-Gemini 2.5 Flash Lite (via OpenRouter) has a hard limit of 1,048,576 tokens per
-request.  For large codebases the raw code_contents can far exceed this limit.
-
-The agent enforces the limit with a two-stage strategy:
+The agent enforces context limits with a two-stage strategy:
 
 1. **Fit-in-one** – if the full prompt (system + user) fits within
 MAX_PROMPT_TOKENS, it is sent as a single request (original behaviour).
@@ -70,21 +72,67 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# OpenRouter configuration — loaded from .env
-OPENROUTER_API_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-MODEL_NAME = os.getenv("MODEL_NAME", "google/gemini-2.5-flash-lite")
+# ── Provider configuration ─────────────────────────────────────────────────────
+# LLM_PROVIDER selects a named preset: "openrouter" (default), "minimax", or
+# "custom".  Each preset defines sensible defaults for base URL, API key env
+# variable, model name, and context window size.  All values can still be
+# overridden individually via the corresponding env vars.
+
+PROVIDER_PRESETS = {
+    "openrouter": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "api_key_env": "OPENROUTER_API_KEY",
+        "default_model": "google/gemini-2.5-flash-lite",
+        "context_limit": 131_072,
+        "api_max_tokens": 1_048_576,
+    },
+    "minimax": {
+        "base_url": "https://api.minimax.io/v1",
+        "api_key_env": "MINIMAX_API_KEY",
+        "default_model": "MiniMax-M2.5",
+        "context_limit": 204_800,
+        "api_max_tokens": 204_800,
+    },
+    "custom": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "api_key_env": "OPENROUTER_API_KEY",
+        "default_model": "google/gemini-2.5-flash-lite",
+        "context_limit": 131_072,
+        "api_max_tokens": 1_048_576,
+    },
+}
+
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openrouter").lower()
+if LLM_PROVIDER not in PROVIDER_PRESETS:
+    logger.warning("Unknown LLM_PROVIDER '%s', falling back to 'openrouter'.", LLM_PROVIDER)
+    LLM_PROVIDER = "openrouter"
+
+_preset = PROVIDER_PRESETS[LLM_PROVIDER]
+
+# Resolve final configuration: env var overrides take precedence over presets.
+# For backward compatibility, OPENROUTER_BASE_URL / OPENROUTER_API_KEY are
+# always checked as fallback env vars regardless of the selected provider.
+LLM_BASE_URL = (
+    os.getenv("LLM_BASE_URL")
+    or os.getenv("OPENROUTER_BASE_URL")
+    or _preset["base_url"]
+)
+LLM_API_KEY = (
+    os.getenv("LLM_API_KEY")
+    or os.getenv(_preset["api_key_env"])
+    or os.getenv("OPENROUTER_API_KEY", "")
+)
+MODEL_NAME = os.getenv("MODEL_NAME") or _preset["default_model"]
+
+# Backward-compatible aliases
+OPENROUTER_API_URL = LLM_BASE_URL
+OPENROUTER_API_KEY = LLM_API_KEY
 
 # ── Token-limit constants ──────────────────────────────────────────────────────
-# Hard API limit for Gemini 2.5 Flash Lite via OpenRouter.
-API_MAX_TOKENS: int = 1_048_576
+API_MAX_TOKENS: int = _preset["api_max_tokens"]
 
-# Hard limit for 128K context window models (e.g. gpt-oss-20b).
-# Used to compute a dynamic per-chunk code budget that accounts for the
-# actual MAP_CHUNK_PROMPT overhead (system prompt + directory tree + template).
-# The dynamic budget is computed in analyze_project_stream() before chunking.
-# This constant is the fallback / default when no dynamic computation is done.
-MODEL_CONTEXT_LIMIT: int = 131_072    # hard limit for 128K models
+# Context window size — varies by provider/model.
+MODEL_CONTEXT_LIMIT: int = _preset["context_limit"]
 
 # We reserve headroom for the system prompt, prompt template boilerplate, and
 # the model's own output budget.  The remaining budget is available for code.
@@ -300,30 +348,37 @@ class CodebaseAnalysisAgent:
 
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize the agent with OpenRouter API credentials.
+        Initialize the agent with LLM provider credentials.
 
         Credentials are resolved in this order:
         1. Explicit api_key argument
-        2. OPENROUTER_API_KEY environment variable (loaded from .env)
+        2. Provider-specific env var (e.g. MINIMAX_API_KEY, OPENROUTER_API_KEY)
+        3. LLM_API_KEY env var (generic override)
 
         Args:
-            api_key: Optional override for the OpenRouter API key.
+            api_key: Optional override for the LLM API key.
         """
-        resolved_key = api_key or OPENROUTER_API_KEY
+        resolved_key = api_key or LLM_API_KEY
         if not resolved_key:
+            key_env = _preset["api_key_env"]
             raise ValueError(
-                "OpenRouter API key not found. Set OPENROUTER_API_KEY in .env or pass api_key."
+                f"LLM API key not found. Set {key_env} in .env or pass api_key. "
+                f"(Current provider: {LLM_PROVIDER})"
             )
 
         self.client = OpenAI(
-            base_url=OPENROUTER_API_URL,
+            base_url=LLM_BASE_URL,
             api_key=resolved_key,
         )
         self.model = MODEL_NAME
+        self.provider = LLM_PROVIDER
         self.conversation_history: list[dict] = []
         self.project_path: Optional[str] = None
         self.scan_result: Optional[dict] = None
-        logger.info("CodebaseAnalysisAgent initialized with model: %s", self.model)
+        logger.info(
+            "CodebaseAnalysisAgent initialized with provider=%s, model=%s, base_url=%s",
+            self.provider, self.model, LLM_BASE_URL,
+        )
 
     def _call_llm(self, messages: list[dict]) -> str:
         """
@@ -352,10 +407,11 @@ class CodebaseAnalysisAgent:
         logger.debug("Pre-flight token estimate: ~%d tokens", estimated)
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-            )
+            kwargs = dict(model=self.model, messages=messages)
+            # MiniMax requires temperature in (0.0, 1.0] — zero is rejected.
+            if self.provider == "minimax":
+                kwargs["temperature"] = 1.0
+            response = self.client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
         except Exception as e:
             logger.error("LLM API call failed: %s", e)
