@@ -7,7 +7,7 @@ multi-turn conversation.
 
 Supported providers:
   - **openrouter** (default): OpenRouter API with any compatible model
-  - **minimax**: MiniMax API (OpenAI-compatible) with MiniMax-M2.5 models
+  - **minimax**: MiniMax API (OpenAI-compatible) with MiniMax-M2.7 models
   - **custom**: Any OpenAI-compatible endpoint via manual configuration
 
 Configuration is loaded from a .env file via python-dotenv.
@@ -89,7 +89,7 @@ PROVIDER_PRESETS = {
     "minimax": {
         "base_url": "https://api.minimax.io/v1",
         "api_key_env": "MINIMAX_API_KEY",
-        "default_model": "MiniMax-M2.5",
+        "default_model": "MiniMax-M2.7",
         "context_limit": 204_800,
         "api_max_tokens": 204_800,
     },
