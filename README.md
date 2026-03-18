@@ -104,12 +104,16 @@ MODEL_NAME=google/gemini-2.5-flash-lite   # or any OpenRouter model
 ```bash
 LLM_PROVIDER=minimax
 MINIMAX_API_KEY=your_key_here
-# MODEL_NAME=MiniMax-M2.5              # default — peak performance, best value
-# MODEL_NAME=MiniMax-M2.5-highspeed    # same performance, faster
+# MODEL_NAME=MiniMax-M2.7              # default — latest flagship, enhanced reasoning
+# MODEL_NAME=MiniMax-M2.7-highspeed    # high-speed version for low-latency scenarios
+# MODEL_NAME=MiniMax-M2.5              # previous generation
+# MODEL_NAME=MiniMax-M2.5-highspeed    # previous generation, high-speed
 ```
 
 | Model | Context Window | Input Price | Output Price |
 |---|---|---|---|
+| `MiniMax-M2.7` | 204,800 tokens | $0.3/M tokens | $1.2/M tokens |
+| `MiniMax-M2.7-highspeed` | 204,800 tokens | $0.6/M tokens | $2.4/M tokens |
 | `MiniMax-M2.5` | 204,800 tokens | $0.3/M tokens | $1.2/M tokens |
 | `MiniMax-M2.5-highspeed` | 204,800 tokens | $0.6/M tokens | $2.4/M tokens |
 
