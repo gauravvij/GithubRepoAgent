@@ -99,23 +99,21 @@ MODEL_NAME=google/gemini-2.5-flash-lite   # or any OpenRouter model
 
 #### MiniMax
 
-[MiniMax](https://www.minimaxi.com/) offers high-performance models with a 204K token context window — ideal for analyzing large codebases in fewer chunks.
+[MiniMax](https://www.minimaxi.com/) offers high-performance models with a 512K token context window — ideal for analyzing large codebases in fewer chunks.
 
 ```bash
 LLM_PROVIDER=minimax
 MINIMAX_API_KEY=your_key_here
-# MODEL_NAME=MiniMax-M2.7              # default — latest flagship, enhanced reasoning
-# MODEL_NAME=MiniMax-M2.7-highspeed    # high-speed version for low-latency scenarios
-# MODEL_NAME=MiniMax-M2.5              # previous generation
-# MODEL_NAME=MiniMax-M2.5-highspeed    # previous generation, high-speed
+# MODEL_NAME=MiniMax-M3                # default — latest flagship, enhanced reasoning
+# MODEL_NAME=MiniMax-M2.7              # previous generation
+# MODEL_NAME=MiniMax-M2.7-highspeed    # previous generation, high-speed
 ```
 
 | Model | Context Window | Input Price | Output Price |
 |---|---|---|---|
+| `MiniMax-M3` | 524,288 tokens | $0.6/M tokens | $2.4/M tokens |
 | `MiniMax-M2.7` | 204,800 tokens | $0.3/M tokens | $1.2/M tokens |
 | `MiniMax-M2.7-highspeed` | 204,800 tokens | $0.6/M tokens | $2.4/M tokens |
-| `MiniMax-M2.5` | 204,800 tokens | $0.3/M tokens | $1.2/M tokens |
-| `MiniMax-M2.5-highspeed` | 204,800 tokens | $0.6/M tokens | $2.4/M tokens |
 
 Get your API key at [platform.minimax.io](https://platform.minimax.io/).
 
